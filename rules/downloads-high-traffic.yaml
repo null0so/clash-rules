@@ -1,0 +1,104 @@
+# 全网大流量下载、AI 模型仓库与视频流分流规则 -> 统一导向【⬇️ 下载专用 / 📦 大流量节点】
+# 位置必须在 category-ai-!cn、google、github、cn 之前，确保下模型/拉镜像/看视频不消耗昂贵 AI 节点流量
+payload:
+  # =====================================================================
+  # 1. Hugging Face 全家桶（模型权重、数据集、XetHub 分布式存储、LFS 全球 CDN）
+  # =====================================================================
+  - DOMAIN-SUFFIX,huggingface.co
+  - DOMAIN-SUFFIX,hf.co
+  - DOMAIN-SUFFIX,hf.space
+  - DOMAIN-SUFFIX,huggingface.tech
+  - DOMAIN-SUFFIX,xethub.hf.co
+  - DOMAIN-SUFFIX,xethub-eu.hf.co
+  - DOMAIN,cas-server.xethub.hf.co
+  - DOMAIN,cas-server.xethub-eu.hf.co
+  - DOMAIN,cas-bridge.xethub.hf.co
+  - DOMAIN,transfer.xethub.hf.co
+  - DOMAIN,transfer.xethub-eu.hf.co
+  - DOMAIN,cdn-lfs.hf.co
+  - DOMAIN,cdn-lfs-us-1.hf.co
+  - DOMAIN,cdn-lfs-eu-1.hf.co
+  - DOMAIN,us.aws.cdn.hf.co
+  - DOMAIN,us.gcp.cdn.hf.co
+
+  # =====================================================================
+  # 2. 其他 AI 模型权重与数据集下载（Civitai / Ollama / Kaggle / TFHub / Replicate）
+  # =====================================================================
+  - DOMAIN-SUFFIX,civitai.com
+  - DOMAIN-SUFFIX,civitai.red
+  - DOMAIN-SUFFIX,civitai-cdn.com
+  - DOMAIN-SUFFIX,ollama.com
+  - DOMAIN-SUFFIX,ollama.ai
+  - DOMAIN,dd20bb891979d25aebc8bec07b2b3bbc.r2.cloudflarestorage.com
+  - DOMAIN-SUFFIX,replicate.delivery
+  - DOMAIN-SUFFIX,tfhub.dev
+  - DOMAIN,download.tensorflow.google.com
+  - DOMAIN,download.mlcc.google.com
+  - DOMAIN-SUFFIX,kaggle.com
+  - DOMAIN-SUFFIX,kaggle.io
+  - DOMAIN-SUFFIX,kaggleusercontent.com
+
+  # =====================================================================
+  # 3. Google 体系内纯大流量下载、云存储与超清视频流剥离（不影响 Google AI 鉴权）
+  # =====================================================================
+  # 安装包 / Chrome / Android Studio / Antigravity 客户端更新包
+  - DOMAIN,dl.google.com
+  - DOMAIN,dl-ssl.google.com
+  - DOMAIN,dl.l.google.com
+  - DOMAIN,c.pack.google.com
+  - DOMAIN,cache.pack.google.com
+  - DOMAIN-SUFFIX,gvt1.com
+  - DOMAIN-SUFFIX,gvt2.com
+  - DOMAIN-SUFFIX,gvt3.com
+  - DOMAIN-SUFFIX,xn--ngstr-lra8j.com
+  # Google Cloud Storage / Google Drive 大文件下载 / 容器仓库
+  - DOMAIN,storage.googleapis.com
+  - DOMAIN,storage.cloud.google.com
+  - DOMAIN,drive.usercontent.google.com
+  - DOMAIN-SUFFIX,gcr.io
+  - DOMAIN-SUFFIX,pkg.dev
+  # YouTube 视频流与缩略图 CDN
+  - DOMAIN-SUFFIX,googlevideo.com
+  - DOMAIN-SUFFIX,ytimg.com
+  - DOMAIN-SUFFIX,ggpht.com
+
+  # =====================================================================
+  # 4. GitHub 大文件下载（Release 附件 / Raw / 源码压缩包 / Git LFS / GHCR 容器）
+  # =====================================================================
+  - DOMAIN,objects.githubusercontent.com
+  - DOMAIN,release-assets.githubusercontent.com
+  - DOMAIN,raw.githubusercontent.com
+  - DOMAIN,codeload.github.com
+  - DOMAIN,media.githubusercontent.com
+  - DOMAIN,lfs.github.com
+  - DOMAIN,github-cloud.s3.amazonaws.com
+  - DOMAIN,pkg-containers.githubusercontent.com
+  - DOMAIN-SUFFIX,ghcr.io
+
+  # =====================================================================
+  # 5. 容器镜像、开发语言包管理器与 IDE 插件市场（Antigravity OpenVSX / VSCode）
+  # =====================================================================
+  # Docker / Quay / K8s
+  - DOMAIN-SUFFIX,docker.io
+  - DOMAIN-SUFFIX,docker.com
+  - DOMAIN,production.cloudflare.docker.com
+  - DOMAIN-SUFFIX,quay.io
+  - DOMAIN-SUFFIX,k8s.io
+  # Python (PyPI / Conda) / Node (npm / Yarn / pnpm) / Rust (Crates) / Go
+  - DOMAIN-SUFFIX,pypi.org
+  - DOMAIN-SUFFIX,pythonhosted.org
+  - DOMAIN-SUFFIX,anaconda.org
+  - DOMAIN-SUFFIX,anaconda.com
+  - DOMAIN-SUFFIX,npmjs.org
+  - DOMAIN-SUFFIX,npmjs.com
+  - DOMAIN-SUFFIX,yarnpkg.com
+  - DOMAIN-SUFFIX,crates.io
+  - DOMAIN,proxy.golang.org
+  - DOMAIN,sum.golang.org
+  # IDE 插件市场与安装包（OpenVSX / VS Code Marketplace）
+  - DOMAIN-SUFFIX,open-vsx.org
+  - DOMAIN-SUFFIX,vsassets.io
+  - DOMAIN,marketplace.visualstudio.com
+  - DOMAIN,update.code.visualstudio.com
+  - DOMAIN,download.visualstudio.microsoft.com
+  - DOMAIN,az764295.vo.msecnd.net

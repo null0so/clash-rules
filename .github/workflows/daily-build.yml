@@ -1,0 +1,85 @@
+name: Daily Build & Deduplicate Clash Rules
+
+on:
+  # 每天北京时间 06:00 (UTC 22:00) 自动拉取上游、去重收敛并编译 .mrs
+  schedule:
+    - cron: "0 22 * * *"
+  # 修改本地 rules/ 或构建脚本推送时自动触发重编
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "rules/**"
+      - "scripts/**"
+      - ".github/workflows/daily-build.yml"
+  # 支持在 GitHub Actions 页面手动一键运行
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-clash-rules-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Latest Mihomo CLI (for .mrs binary compilation)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
+            https://api.github.com/repos/MetaCubeX/mihomo/releases/latest | jq -r '.tag_name')
+          echo "Downloading Mihomo ${TAG}..."
+          BASE_URL="https://github.com/MetaCubeX/mihomo/releases/download/${TAG}"
+          if ! curl -fsSL -o mihomo.gz "${BASE_URL}/mihomo-linux-amd64-compatible-${TAG}.gz"; then
+            curl -fsSL -o mihomo.gz "${BASE_URL}/mihomo-linux-amd64-${TAG}.gz"
+          fi
+          gzip -d mihomo.gz
+          chmod +x mihomo
+          sudo mv mihomo /usr/local/bin/mihomo
+          mihomo -v
+
+      - name: Run Deduplication & MRS Build Script
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          python3 scripts/build_rules.py
+
+      - name: Publish Deduplication Summary to Job Summary
+        run: |
+          cat dist/BUILD_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit & Push Updated Rulesets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 仅在规则产物或自托管脚本发生实质变化（或手动触发）时提交，避免每天产生无意义的纯时间戳提交
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && \
+             git diff --quiet -- dist/ruleset dist/override-selfhosted.js && \
+             [ -z "$(git ls-files --others --exclude-standard dist/ruleset dist/override-selfhosted.js)" ]; then
+            echo "规则内容无变化，跳过提交。"
+            exit 0
+          fi
+
+          git add dist/
+          git diff --cached --quiet || (
+            git commit -m "chore(rules): daily auto-deduplicate & compile mrs [skip ci]"
+            git push
+          )

@@ -1,0 +1,571 @@
+# ==============================================================================
+# Mihomo (Clash Meta) 精细化 AI 隔离 + 大流量下载分流配置
+# 核心设计目标：
+#   1. 国外常规流量 & 全网下载（HuggingFace/模型/镜像/包管理/视频流） -> 📦 大流量节点
+#   2. 各大 AI 服务精细独立分流（Google Antigravity / Google AI / Claude / OpenAI / AI 编程 / 其他 AI）
+#   3. Google 共享域名三级剥离：
+#      - 纯下载/视频域名 (dl/gvt/storage/drive/googlevideo) -> ⬇️ 下载专用 (走大流量节点)
+#      - Antigravity & Cloud Code -> 🌌 Google Antigravity
+#      - Gemini / AI Studio / NotebookLM / Jules / Vertex -> ✨ Google AI
+#      - Google 账号/OAuth/Play区域校验/搜索/API -> 🔍 Google 服务（独立于香港大流量与国内直连，防锁区！）
+# ==============================================================================
+
+mixed-port: 7890
+allow-lan: false
+bind-address: "*"
+mode: rule
+log-level: info
+ipv6: false
+unified-delay: true
+tcp-concurrent: true
+find-process-mode: strict
+global-client-fingerprint: chrome
+
+geodata-mode: true
+geo-auto-update: true
+geo-update-interval: 24
+
+# 域名嗅探：确保 CLI 工具、Go 进程（如 Antigravity language_server）使用 IP 连接时也能还原域名精准分流
+sniffer:
+  enable: true
+  force-dns-mapping: true
+  parse-pure-ip: true
+  override-destination: false
+  sniff:
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+    TLS:
+      ports: [443, 8443]
+    QUIC:
+      ports: [443, 8443]
+  skip-domain:
+    - "Mijia Cloud"
+    - "+.push.apple.com"
+    - "localhost"
+    - "+.local"
+
+# TUN 模式（兼容 Antigravity IDE / CLI / Claude Code / 终端命令）
+# 已显式排除 127.0.0.0/8 回环地址，避免劫持 Antigravity 本地 gRPC / CDP 浏览器调试端口
+tun:
+  enable: true
+  stack: mixed
+  auto-route: true
+  auto-redirect: true
+  auto-detect-interface: true
+  dns-hijack:
+    - any:53
+    - tcp://any:53
+  route-exclude-address:
+    - 127.0.0.0/8
+    - ::1/128
+
+# 防泄露 DNS：开启 respect-rules，使 Google/AI 域名的 DNS 解析也强制走对应代理节点，杜绝国内 DNS 污染与跨区 ECS 泄露
+dns:
+  enable: true
+  ipv6: false
+  listen: 0.0.0.0:1053
+  enhanced-mode: fake-ip
+  fake-ip-range: 198.18.0.1/16
+  respect-rules: true
+  fake-ip-filter:
+    - "*.lan"
+    - "*.local"
+    - "localhost.ptlogin2.qq.com"
+    - "+.msftconnecttest.com"
+    - "+.msftncsi.com"
+    - "time.*.com"
+    - "ntp.*.com"
+    - "+.stun.*.*"
+    - "+.stun.*.*.*"
+  default-nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  proxy-server-nameserver:
+    - https://223.5.5.5/dns-query
+    - https://120.53.53.53/dns-query
+  nameserver-policy:
+    "rule-set:private_domain,cn_domain":
+      - https://223.5.5.5/dns-query
+      - https://120.53.53.53/dns-query
+  nameserver:
+    - https://dns.google/dns-query
+    - https://cloudflare-dns.com/dns-query
+
+# ==============================================================================
+# 机场订阅源（只需将 url 替换为你的订阅地址；若有多个机场可复制新增 provider）
+# ==============================================================================
+proxy-providers:
+  MyAirport:
+    type: http
+    url: "https://请在此处替换为你的机场订阅链接"
+    path: ./proxies/my_airport.yaml
+    interval: 86400
+    health-check:
+      enable: true
+      url: "https://www.gstatic.com/generate_204"
+      interval: 300
+      lazy: true
+
+# ==============================================================================
+# 策略组设计（AI 精细拆分 + Google 隔离 + 国外/下载统一走大流量）
+# ==============================================================================
+proxy-groups:
+  # 1. 核心出口：国外常规流量 & 大流量节点池
+  - name: "📦 大流量节点"
+    type: select
+    proxies:
+      - "⚡ 大流量自动优选"
+    include-all: true
+    exclude-filter: "(?i)剩余|到期|官网|套餐|重置"
+
+  # 2. 全网下载与大模型权重专用（默认直接走【📦 大流量节点】，也可单独切其他低倍率专线或直连）
+  - name: "⬇️ 下载专用"
+    type: select
+    proxies:
+      - "📦 大流量节点"
+      - "⚡ 大流量自动优选"
+      - "🎯 全球直连"
+    include-all: true
+    exclude-filter: "(?i)剩余|到期|官网|套餐|重置"
+
+  # 3. Google Antigravity 专属组（自动剔除香港/澳门/俄罗斯等锁区节点）
+  - name: "🌌 Google Antigravity"
+    type: select
+    include-all: true
+    exclude-filter: "(?i)港|HK|Hong\\s?Kong|澳门|MO|Macao|俄|RU|Russia|中国|CN|剩余|到期|官网|套餐|重置"
+    proxies:
+      - "📦 大流量节点"
+
+  # 4. Google AI 服务组（Gemini / AI Studio / NotebookLM / Jules / Vertex）
+  # 默认跟随【🌌 Google Antigravity】保持同 IP 防风控，也可随时独立指定其他节点
+  - name: "✨ Google AI"
+    type: select
+    proxies:
+      - "🌌 Google Antigravity"
+    include-all: true
+    exclude-filter: "(?i)港|HK|Hong\\s?Kong|澳门|MO|Macao|俄|RU|Russia|中国|CN|剩余|到期|官网|套餐|重置"
+
+  # 5. Google 通用与鉴权隔离组（解决 Google 共享域名掉入香港大流量节点导致 AI 锁区的问题！）
+  # 默认跟随【✨ Google AI】，你也可以单独指定任意非香港干净节点（已剥离 YouTube 和 Google 下载到大流量）
+  - name: "🔍 Google 服务"
+    type: select
+    proxies:
+      - "✨ Google AI"
+      - "🌌 Google Antigravity"
+      - "📦 大流量节点"
+    include-all: true
+    exclude-filter: "(?i)剩余|到期|官网|套餐|重置"
+
+  # 6. Claude (Anthropic / Claude Code) 专属组（对 IP 纯净度要求最高，独立选点）
+  - name: "🟠 Claude"
+    type: select
+    include-all: true
+    exclude-filter: "(?i)港|HK|Hong\\s?Kong|澳门|MO|Macao|俄|RU|Russia|中国|CN|剩余|到期|官网|套餐|重置"
+    proxies:
+      - "🌌 Google Antigravity"
+      - "📦 大流量节点"
+
+  # 7. OpenAI (ChatGPT / Sora / API / 实时语音) 专属组
+  - name: "🟢 OpenAI"
+    type: select
+    include-all: true
+    exclude-filter: "(?i)港|HK|Hong\\s?Kong|澳门|MO|Macao|俄|RU|Russia|中国|CN|剩余|到期|官网|套餐|重置"
+    proxies:
+      - "🌌 Google Antigravity"
+      - "📦 大流量节点"
+
+  # 8. AI 编程助手组（Cursor / Windsurf / GitHub Copilot / JetBrains AI）
+  - name: "💻 AI 编程"
+    type: select
+    proxies:
+      - "🌌 Google Antigravity"
+      - "🟠 Claude"
+      - "🟢 OpenAI"
+      - "📦 大流量节点"
+    include-all: true
+    exclude-filter: "(?i)港|HK|Hong\\s?Kong|澳门|MO|Macao|俄|RU|Russia|中国|CN|剩余|到期|官网|套餐|重置"
+
+  # 9. 其他海外 AI 平台（Grok / Perplexity / OpenRouter / Poe / Groq / Midjourney 等）
+  - name: "🤖 其他 AI"
+    type: select
+    proxies:
+      - "✨ Google AI"
+      - "🟢 OpenAI"
+      - "🟠 Claude"
+      - "📦 大流量节点"
+    include-all: true
+    exclude-filter: "(?i)港|HK|Hong\\s?Kong|澳门|MO|Macao|俄|RU|Russia|中国|CN|剩余|到期|官网|套餐|重置"
+
+  # 10. 大流量自动测速优选（自动排除 2x 以上高倍率与家宽节点，挑选最低延迟的大带宽节点）
+  - name: "⚡ 大流量自动优选"
+    type: url-test
+    url: "https://www.gstatic.com/generate_204"
+    interval: 300
+    tolerance: 50
+    lazy: true
+    include-all: true
+    exclude-filter: "(?i)高倍率|[2-9](\\.\\d+)?[xX倍]|家宽|住宅|原生|剩余|到期|官网|套餐|重置"
+
+  # 11. 国内直连
+  - name: "🎯 全球直连"
+    type: select
+    proxies:
+      - DIRECT
+      - "📦 大流量节点"
+
+# ==============================================================================
+# 规则集提供者（本地精细化 YAML + GitHub MetaCubeX 官方每日自动更新 .mrs 二进制规则库）
+# ==============================================================================
+rule-providers:
+  # --- 本地高精度自定义规则集 ---
+  custom_google_antigravity:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./rules/google-antigravity.yaml
+
+  custom_google_ai:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./rules/google-ai.yaml
+
+  custom_google_auth:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./rules/google-auth-core.yaml
+
+  custom_downloads:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./rules/downloads-high-traffic.yaml
+
+  custom_claude:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./rules/claude.yaml
+
+  custom_openai:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./rules/openai.yaml
+
+  custom_ai_coding:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./rules/ai-coding.yaml
+
+  custom_ai_others:
+    type: file
+    behavior: classical
+    format: yaml
+    path: ./rules/ai-others.yaml
+
+  # --- GitHub MetaCubeX 官方上游规则集 (jsDelivr CDN 加速，国内可直接拉取) ---
+  private_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/private.mrs"
+    path: ./ruleset/private_domain.mrs
+    interval: 86400
+
+  private_ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/private.mrs"
+    path: ./ruleset/private_ip.mrs
+    interval: 86400
+
+  google_deepmind:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google-deepmind.mrs"
+    path: ./ruleset/google_deepmind.mrs
+    interval: 86400
+
+  anthropic:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/anthropic.mrs"
+    path: ./ruleset/anthropic.mrs
+    interval: 86400
+
+  openai:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/openai.mrs"
+    path: ./ruleset/openai.mrs
+    interval: 86400
+
+  cursor:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cursor.mrs"
+    path: ./ruleset/cursor.mrs
+    interval: 86400
+
+  windsurf:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/windsurf.mrs"
+    path: ./ruleset/windsurf.mrs
+    interval: 86400
+
+  github_copilot:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/github-copilot.mrs"
+    path: ./ruleset/github_copilot.mrs
+    interval: 86400
+
+  jetbrains_ai:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/jetbrains-ai.mrs"
+    path: ./ruleset/jetbrains_ai.mrs
+    interval: 86400
+
+  xai:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/xai.mrs"
+    path: ./ruleset/xai.mrs
+    interval: 86400
+
+  perplexity:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/perplexity.mrs"
+    path: ./ruleset/perplexity.mrs
+    interval: 86400
+
+  category_ai_not_cn:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/category-ai-!cn.mrs"
+    path: ./ruleset/category_ai_not_cn.mrs
+    interval: 86400
+
+  huggingface:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/huggingface.mrs"
+    path: ./ruleset/huggingface.mrs
+    interval: 86400
+
+  kaggle:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/kaggle.mrs"
+    path: ./ruleset/kaggle.mrs
+    interval: 86400
+
+  docker:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/docker.mrs"
+    path: ./ruleset/docker.mrs
+    interval: 86400
+
+  youtube:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/youtube.mrs"
+    path: ./ruleset/youtube.mrs
+    interval: 86400
+
+  google_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/google.mrs"
+    path: ./ruleset/google_domain.mrs
+    interval: 86400
+
+  google_ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/google.mrs"
+    path: ./ruleset/google_ip.mrs
+    interval: 86400
+
+  github:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/github.mrs"
+    path: ./ruleset/github.mrs
+    interval: 86400
+
+  steam_cn:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam@cn.mrs"
+    path: ./ruleset/steam_cn.mrs
+    interval: 86400
+
+  steam:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/steam.mrs"
+    path: ./ruleset/steam.mrs
+    interval: 86400
+
+  apple_cn:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/apple-cn.mrs"
+    path: ./ruleset/apple_cn.mrs
+    interval: 86400
+
+  microsoft_cn:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/microsoft@cn.mrs"
+    path: ./ruleset/microsoft_cn.mrs
+    interval: 86400
+
+  telegram_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/telegram.mrs"
+    path: ./ruleset/telegram_domain.mrs
+    interval: 86400
+
+  telegram_ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/telegram.mrs"
+    path: ./ruleset/telegram_ip.mrs
+    interval: 86400
+
+  geolocation_not_cn:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/geolocation-!cn.mrs"
+    path: ./ruleset/geolocation_not_cn.mrs
+    interval: 86400
+
+  cn_domain:
+    type: http
+    behavior: domain
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geosite/cn.mrs"
+    path: ./ruleset/cn_domain.mrs
+    interval: 86400
+
+  cn_ip:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.mrs"
+    path: ./ruleset/cn_ip.mrs
+    interval: 86400
+
+# ==============================================================================
+# 分流匹配顺序（严格自上而下，顺序不可随意颠倒！）
+# ==============================================================================
+rules:
+  # --- [第 1 层] 本地回环与局域网直连（保护 Antigravity 本地 gRPC 语言服务器与浏览器调试端口） ---
+  - DOMAIN,localhost,DIRECT
+  - DOMAIN-SUFFIX,local,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT,no-resolve
+  - IP-CIDR6,::1/128,DIRECT,no-resolve
+  - RULE-SET,private_domain,DIRECT
+  - RULE-SET,private_ip,DIRECT,no-resolve
+
+  # 可选：若某些机场节点对 UDP 443 (QUIC/HTTP3) 支持不佳导致 Antigravity / Gemini 偶发卡顿，可取消下一行注释：
+  # - AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
+
+  # --- [第 2 层] Google Antigravity 最高优先级独立分流（必须先于 google_deepmind 与 google） ---
+  - RULE-SET,custom_google_antigravity,🌌 Google Antigravity
+
+  # --- [第 3 层] Google AI 生态详细分流（Gemini / AI Studio / NotebookLM / Jules / Vertex AI） ---
+  - RULE-SET,custom_google_ai,✨ Google AI
+  - RULE-SET,google_deepmind,✨ Google AI
+
+  # --- [第 4 层] Google 核心账号鉴权与区域校验保护（防掉入香港大流量或被 @cn 误直连） ---
+  - RULE-SET,custom_google_auth,🔍 Google 服务
+
+  # --- [第 5 层] 全网大流量下载、HF 模型、容器镜像、包管理器与 Google 下载/视频剥离 ---
+  # （排在 category_ai_not_cn、google_domain、github、cn_domain 之前，确保下模型/看 4K 全部走大流量节点！）
+  - RULE-SET,huggingface,⬇️ 下载专用
+  - RULE-SET,custom_downloads,⬇️ 下载专用
+  - RULE-SET,kaggle,⬇️ 下载专用
+  - RULE-SET,docker,⬇️ 下载专用
+  - RULE-SET,youtube,⬇️ 下载专用
+  # Steam 先放行国内 CDN 直连跑满本地宽带，海外 Steam 下载走下载专用（大流量）
+  - RULE-SET,steam_cn,🎯 全球直连
+  - RULE-SET,steam,⬇️ 下载专用
+
+  # --- [第 6 层] 各大海外 AI 服务精细独立分流 ---
+  # Claude (Anthropic / Claude Code / MCP)
+  - RULE-SET,custom_claude,🟠 Claude
+  - RULE-SET,anthropic,🟠 Claude
+
+  # OpenAI (ChatGPT / Sora / API / LiveKit 语音)
+  - RULE-SET,custom_openai,🟢 OpenAI
+  - RULE-SET,openai,🟢 OpenAI
+
+  # AI 编程助手 (Cursor / Windsurf / GitHub Copilot / JetBrains AI / CodeRabbit)
+  - RULE-SET,custom_ai_coding,💻 AI 编程
+  - RULE-SET,cursor,💻 AI 编程
+  - RULE-SET,windsurf,💻 AI 编程
+  - RULE-SET,github_copilot,💻 AI 编程
+  - RULE-SET,jetbrains_ai,💻 AI 编程
+
+  # 其他主流 AI 服务 (xAI Grok / Perplexity / OpenRouter / Poe / Groq / Midjourney 等长尾兜底)
+  # 注：因 HuggingFace / Ollama 已在第 5 层提前走【⬇️ 下载专用】，此处 category_ai_not_cn 不会抢占模型下载流量！
+  - RULE-SET,xai,🤖 其他 AI
+  - RULE-SET,perplexity,🤖 其他 AI
+  - RULE-SET,custom_ai_others,🤖 其他 AI
+  - RULE-SET,category_ai_not_cn,🤖 其他 AI
+
+  # --- [第 7 层] Google 其余所有服务与 IP 隔离（排在 cn_domain 之前，杜绝 google@cn 直连泄露国内 IP！） ---
+  - RULE-SET,google_domain,🔍 Google 服务
+  - RULE-SET,google_ip,🔍 Google 服务,no-resolve
+
+  # --- [第 8 层] 国内常见服务直连（Apple / Microsoft 国内 CDN / 大陆域名） ---
+  - RULE-SET,apple_cn,🎯 全球直连
+  - RULE-SET,microsoft_cn,🎯 全球直连
+  - RULE-SET,cn_domain,🎯 全球直连
+
+  # --- [第 9 层] 国外常规流量统一走【📦 大流量节点】 ---
+  - RULE-SET,github,📦 大流量节点
+  - RULE-SET,telegram_domain,📦 大流量节点
+  - RULE-SET,telegram_ip,📦 大流量节点,no-resolve
+  - RULE-SET,geolocation_not_cn,📦 大流量节点
+  - RULE-SET,cn_ip,🎯 全球直连,no-resolve
+
+  # 最终兜底：未匹配的所有海外流量默认走【📦 大流量节点】
+  - MATCH,📦 大流量节点

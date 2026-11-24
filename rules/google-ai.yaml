@@ -1,0 +1,67 @@
+# Google AI 全家桶详细分流规则
+# 涵盖：Gemini / AI Studio / NotebookLM / Jules / Labs / Stitch / Opal / Flow / IDX / Vertex AI / DeepMind
+# 建议绑定：与 Google Antigravity 保持同一国家/节点（如美国/新加坡干净 IP），防止 Google 账号跨区风控
+payload:
+  # --- 1. Gemini 网页端与客户端及 Policy-Aware (-pa) 区域敏感接口 ---
+  - DOMAIN-SUFFIX,gemini.google.com
+  - DOMAIN-SUFFIX,gemini.google
+  - DOMAIN-SUFFIX,bard.google.com
+  - DOMAIN-SUFFIX,gemini.gstatic.com
+  - DOMAIN,geminiweb-pa.clients.google.com
+  - DOMAIN,geminiweb-pa.clients6.google.com
+  - DOMAIN,robinfrontend-pa.googleapis.com
+  - DOMAIN,proactivebackend-pa.googleapis.com
+  - DOMAIN,geller-pa.googleapis.com
+  - DOMAIN,optimizationguide-pa.googleapis.com
+
+  # --- 2. Google AI Studio & Gemini Developer API ---
+  - DOMAIN-SUFFIX,aistudio.google.com
+  - DOMAIN-SUFFIX,ai.studio
+  - DOMAIN-SUFFIX,makersuite.google.com
+  - DOMAIN,ai.google.dev
+  - DOMAIN-SUFFIX,generativeai.google
+  - DOMAIN-SUFFIX,generativelanguage.googleapis.com
+  - DOMAIN,alkalicore-pa.clients6.google.com
+  - DOMAIN,alkalimakersuite-pa.clients6.google.com
+  - DOMAIN,webchannel-alkalimakersuite-pa.clients6.google.com
+  - DOMAIN-KEYWORD,alkalimakersuite
+  - DOMAIN-KEYWORD,generativelanguage
+
+  # --- 3. NotebookLM ---
+  - DOMAIN-SUFFIX,notebooklm.google.com
+  - DOMAIN-SUFFIX,notebooklm.google
+  - DOMAIN-SUFFIX,notebook.google.com
+  - DOMAIN-SUFFIX,notebook.google
+  - DOMAIN,notebooklm-pa.googleapis.com
+  - DOMAIN,notebooklm.googleapis.com
+  - DOMAIN,labstailwind.pa.googleapis.com
+
+  # --- 4. Jules / Google AI Labs / Stitch / Opal / Flow / IDX (Firebase Studio) / Colab ---
+  - DOMAIN-SUFFIX,jules.google.com
+  - DOMAIN-SUFFIX,jules.google
+  - DOMAIN-SUFFIX,labs.google
+  - DOMAIN-SUFFIX,labs.google.com
+  - DOMAIN,aisandbox-pa.googleapis.com
+  - DOMAIN-SUFFIX,flow.google
+  - DOMAIN-SUFFIX,flow.google.com
+  - DOMAIN-SUFFIX,opal.google
+  - DOMAIN-SUFFIX,opal.google.com
+  - DOMAIN-SUFFIX,stitch.withgoogle.com
+  - DOMAIN-SUFFIX,aitestkitchen.withgoogle.com
+  - DOMAIN-SUFFIX,fx.google
+  - DOMAIN-SUFFIX,idx.dev
+  - DOMAIN-SUFFIX,idx.google.com
+  - DOMAIN-SUFFIX,firebase.studio
+  - DOMAIN-SUFFIX,firebasestudio.google.com
+  - DOMAIN-SUFFIX,colab.research.google.com
+  - DOMAIN-SUFFIX,colab.google
+
+  # --- 5. Google Workspace AI 侧边栏 / Vertex AI / DeepMind / Gemma ---
+  - DOMAIN,appsgenaiserver-pa.clients.google.com
+  - DOMAIN,appsgenaiserver-pa.clients6.google.com
+  - DOMAIN,appsgenaiserver-pa.googleapis.com
+  - DOMAIN-SUFFIX,aiplatform.googleapis.com
+  - DOMAIN-KEYWORD,aiplatform.googleapis.com
+  - DOMAIN-SUFFIX,deepmind.com
+  - DOMAIN-SUFFIX,deepmind.google
+  - DOMAIN-SUFFIX,gemma.ai

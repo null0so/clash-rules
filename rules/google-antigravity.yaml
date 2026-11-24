@@ -1,0 +1,25 @@
+# Google Antigravity (IDE / CLI / SDK / Cloud Code) 专属分流规则
+# 建议绑定：美国/新加坡/日本等干净低风控原生 IP 节点（避开香港、俄罗斯、中国大陆）
+payload:
+  # Antigravity 官方站点、文档与特性开关
+  - DOMAIN-SUFFIX,antigravity.google
+  - DOMAIN-SUFFIX,antigravity-unleash.goog
+
+  # Antigravity 核心 API 端点
+  - DOMAIN,antigravity.googleapis.com
+  - DOMAIN,antigravity-pa.googleapis.com
+
+  # Cloud Code & Antigravity Agent 后端（含日常构建与沙箱环境，严防命中直连或香港节点）
+  - DOMAIN,cloudcode-pa.googleapis.com
+  - DOMAIN,daily-cloudcode-pa.googleapis.com
+  - DOMAIN-SUFFIX,cloudcode-pa.sandbox.googleapis.com
+  - DOMAIN-SUFFIX,daily-cloudcode-pa.sandbox.googleapis.com
+  - DOMAIN-SUFFIX,autopush-cloudcode-pa.sandbox.googleapis.com
+  - DOMAIN-SUFFIX,preprod-daily-cloudcode-pa.sandbox.googleapis.com
+  - DOMAIN-KEYWORD,cloudcode-pa
+  - DOMAIN-KEYWORD,antigravity
+
+  # Gemini Code Assist / Cloud AI Companion 关联接口
+  - DOMAIN,cloudaicompanion.googleapis.com
+  - DOMAIN,aicode.googleapis.com
+  - DOMAIN,aida.googleapis.com

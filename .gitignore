@@ -1,0 +1,8 @@
+# 忽略临时缓存与本地机场订阅节点缓存，保留 dist/ 供 GitHub Actions 发布构建产物
+__pycache__/
+*.py[cod]
+proxies/
+ruleset/
+.env
+*.local
+*.bak

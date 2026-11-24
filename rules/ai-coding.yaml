@@ -1,0 +1,38 @@
+# AI 编程助手与智能 IDE 专属分流规则
+# 涵盖：Cursor / Windsurf (Codeium) / GitHub Copilot / JetBrains AI / CodeRabbit / Devin / Cline / v0 / Bolt / Lovable
+payload:
+  # Cursor
+  - DOMAIN-SUFFIX,cursor.com
+  - DOMAIN-SUFFIX,cursor.sh
+  - DOMAIN-SUFFIX,cursorapi.com
+  - DOMAIN-SUFFIX,cursor-cdn.com
+  - DOMAIN-SUFFIX,cursorvm.com
+
+  # Windsurf & Codeium
+  - DOMAIN-SUFFIX,windsurf.com
+  - DOMAIN-SUFFIX,windsurf.build
+  - DOMAIN-SUFFIX,codeium.com
+  - DOMAIN-SUFFIX,codeiumdata.com
+
+  # GitHub Copilot
+  - DOMAIN-SUFFIX,githubcopilot.com
+  - DOMAIN,copilot-proxy.githubusercontent.com
+  - DOMAIN,copilot-workspace.githubnext.com
+  - DOMAIN,copilotprodattachments.blob.core.windows.net
+  - DOMAIN,production-copilot-host-westus.webpubsub.azure.com
+
+  # JetBrains AI / Grazie
+  - DOMAIN-SUFFIX,grazie.ai
+  - DOMAIN-SUFFIX,grazie.aws.intellij.net
+
+  # 其他主流 AI 编码 Agent 与前端生成平台
+  - DOMAIN-SUFFIX,coderabbit.ai
+  - DOMAIN-SUFFIX,devin.ai
+  - DOMAIN-SUFFIX,cline.bot
+  - DOMAIN-SUFFIX,opencode.ai
+  - DOMAIN-SUFFIX,kiro.dev
+  - DOMAIN-SUFFIX,v0.dev
+  - DOMAIN-SUFFIX,v0.app
+  - DOMAIN-SUFFIX,bolt.new
+  - DOMAIN-SUFFIX,lovable.dev
+  - DOMAIN-SUFFIX,replit.com

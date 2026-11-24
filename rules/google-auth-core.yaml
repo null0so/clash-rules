@@ -1,0 +1,29 @@
+# Google 核心账号鉴权与区域校验保护规则
+# 作用：Antigravity (Go 语言服务) 和 Gemini 强依赖 OAuth、Play 区域策略与 Google Cookie。
+# 若这些共享 Google 域名误走“香港大流量节点”或被 Google@CN 规则直连，会导致“所在地区不支持”。
+# 因此必须前置分流到【🔍 Google 服务】（建议默认跟随 Google AI 节点或非香港干净节点）。
+payload:
+  # Google 账号登录与会话管理
+  - DOMAIN-SUFFIX,accounts.google.com
+  - DOMAIN-SUFFIX,myaccount.google.com
+  - DOMAIN-SUFFIX,ogs.google.com
+
+  # OAuth2 令牌刷新与身份校验（Antigravity CLI / IDE 核心鉴权接口）
+  - DOMAIN,oauth2.googleapis.com
+  - DOMAIN,www.googleapis.com
+  - DOMAIN,iamcredentials.googleapis.com
+  - DOMAIN,sts.googleapis.com
+  - DOMAIN,people.googleapis.com
+  - DOMAIN,content.googleapis.com
+
+  # Google 隐藏区域风控与长连接信令接口（若走香港极易锁区）
+  - DOMAIN,play.googleapis.com
+  - DOMAIN-SUFFIX,apis.google.com
+  - DOMAIN-SUFFIX,clients6.google.com
+  - DOMAIN,clients.google.com
+  - DOMAIN,signaler-pa.clients6.google.com
+  - DOMAIN,waa-pa.clients6.google.com
+
+  # Google 人机验证与安全策略（防止命中 @cn 直连暴露国内 IP）
+  - DOMAIN-SUFFIX,recaptcha.net
+  - DOMAIN-SUFFIX,csp.withgoogle.com

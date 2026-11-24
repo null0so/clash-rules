@@ -1,0 +1,44 @@
+# 其他海外主流 AI 服务补充规则（配合 MetaCubeX 的 xai / perplexity / category-ai-!cn 使用）
+# 涵盖：xAI Grok / Perplexity / Microsoft Copilot / OpenRouter / Poe / Groq / Cerebras / Mistral / Midjourney / ElevenLabs
+payload:
+  # xAI Grok
+  - DOMAIN-SUFFIX,x.ai
+  - DOMAIN-SUFFIX,grok.com
+  - DOMAIN,grok.x.com
+  - DOMAIN-SUFFIX,grokbot.com
+
+  # Perplexity
+  - DOMAIN-SUFFIX,perplexity.ai
+  - DOMAIN-SUFFIX,perplexity.com
+  - DOMAIN-SUFFIX,pplx.ai
+  - DOMAIN,ppl-ai-file-upload.s3.amazonaws.com
+  - DOMAIN,pplx-res.cloudinary.com
+
+  # Microsoft Copilot (国际版)
+  - DOMAIN-SUFFIX,copilot.microsoft.com
+  - DOMAIN-SUFFIX,copilot.cloud.microsoft
+  - DOMAIN,sydney.bing.com
+  - DOMAIN-SUFFIX,edgeservices.bing.com
+
+  # 聚合 API 与多模型推理平台
+  - DOMAIN-SUFFIX,openrouter.ai
+  - DOMAIN-SUFFIX,poe.com
+  - DOMAIN-SUFFIX,groq.com
+  - DOMAIN-SUFFIX,cerebras.ai
+  - DOMAIN-SUFFIX,mistral.ai
+  - DOMAIN-SUFFIX,together.ai
+  - DOMAIN-SUFFIX,fireworks.ai
+  - DOMAIN-SUFFIX,deepinfra.com
+  - DOMAIN-SUFFIX,cohere.com
+  - DOMAIN-SUFFIX,cohere.ai
+  - DOMAIN-SUFFIX,gateway.ai.cloudflare.com
+
+  # 多模态与创意 AI
+  - DOMAIN-SUFFIX,midjourney.com
+  - DOMAIN-SUFFIX,elevenlabs.io
+  - DOMAIN-SUFFIX,meta.ai
+  - DOMAIN-SUFFIX,suno.com
+  - DOMAIN-SUFFIX,suno.ai
+  - DOMAIN-SUFFIX,runwayml.com
+  - DOMAIN-SUFFIX,pika.art
+  - DOMAIN-SUFFIX,klingai.com
