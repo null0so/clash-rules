@@ -1,8 +1,9 @@
-# 忽略临时缓存与本地机场订阅节点缓存，保留 dist/ 供 GitHub Actions 发布构建产物
+# 仅忽略根目录下的本地运行缓存，保留 dist/ruleset/ 供 GitHub Actions 发布构建产物
 __pycache__/
 *.py[cod]
-proxies/
-ruleset/
+/proxies/
+/ruleset/
+!dist/ruleset/
 .env
 *.local
 *.bak
