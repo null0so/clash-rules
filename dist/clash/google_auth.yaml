@@ -1,0 +1,16 @@
+payload:
+  - DOMAIN-SUFFIX,accounts.google.com
+  - DOMAIN-SUFFIX,apis.google.com
+  - DOMAIN-SUFFIX,clients6.google.com
+  - DOMAIN-SUFFIX,csp.withgoogle.com
+  - DOMAIN-SUFFIX,myaccount.google.com
+  - DOMAIN-SUFFIX,ogs.google.com
+  - DOMAIN-SUFFIX,recaptcha.net
+  - DOMAIN,clients.google.com
+  - DOMAIN,content.googleapis.com
+  - DOMAIN,iamcredentials.googleapis.com
+  - DOMAIN,oauth2.googleapis.com
+  - DOMAIN,people.googleapis.com
+  - DOMAIN,play.googleapis.com
+  - DOMAIN,sts.googleapis.com
+  - DOMAIN,www.googleapis.com

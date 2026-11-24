@@ -1,6 +1,7 @@
 payload:
   - '+.antigravity-unleash.goog'
   - '+.antigravity.google'
+  - '+.antigravity.google.com'
   - '+.autopush-cloudcode-pa.sandbox.googleapis.com'
   - '+.cloudcode-pa.sandbox.googleapis.com'
   - '+.daily-cloudcode-pa.sandbox.googleapis.com'
