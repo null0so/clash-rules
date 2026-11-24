@@ -3,6 +3,7 @@
 payload:
   # Antigravity 官方站点、文档与特性开关
   - DOMAIN-SUFFIX,antigravity.google
+  - DOMAIN-SUFFIX,antigravity.google.com
   - DOMAIN-SUFFIX,antigravity-unleash.goog
 
   # Antigravity 核心 API 端点

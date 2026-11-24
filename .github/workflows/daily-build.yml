@@ -72,8 +72,8 @@ jobs:
 
           # 仅在规则产物或自托管脚本发生实质变化（或手动触发）时提交，避免每天产生无意义的纯时间戳提交
           if [ "${{ github.event_name }}" != "workflow_dispatch" ] && \
-             git diff --quiet -- dist/ruleset dist/override-selfhosted.js dist/openclash_custom_overwrite.sh dist/openclash.yaml && \
-             [ -z "$(git ls-files --others --exclude-standard dist/ruleset dist/override-selfhosted.js dist/openclash_custom_overwrite.sh dist/openclash.yaml)" ]; then
+             git diff --quiet -- dist/ruleset dist/clash dist/override-selfhosted.js dist/openclash_custom_overwrite.sh dist/openclash.yaml && \
+             [ -z "$(git ls-files --others --exclude-standard dist/ruleset dist/clash dist/override-selfhosted.js dist/openclash_custom_overwrite.sh dist/openclash.yaml)" ]; then
             echo "规则内容无变化，跳过提交。"
             exit 0
           fi

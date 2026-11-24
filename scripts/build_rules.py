@@ -35,6 +35,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 LOCAL_RULES_DIR = ROOT_DIR / "rules"
 DIST_DIR = ROOT_DIR / "dist"
 DIST_RULESET_DIR = DIST_DIR / "ruleset"
+DIST_CLASH_DIR = DIST_DIR / "clash"
 
 UPSTREAM_GEOSITE = "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite"
 UPSTREAM_GEOIP = "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip"
@@ -170,6 +171,19 @@ class DomainSet:
         lines = ["payload:"]
         for item in self.to_mihomo_text_lines():
             lines.append(f"  - '{item}'")
+        return lines
+
+    def to_clash_classical_yaml_lines(self) -> List[str]:
+        """输出匹配 *BehaviorYAML (behavior: classical, format: yaml) 的标准 Clash YAML 格式"""
+        lines = ["payload:"]
+        for s in sorted(self.suffixes):
+            lines.append(f"  - DOMAIN-SUFFIX,{s}")
+        for d in sorted(self.exact):
+            lines.append(f"  - DOMAIN,{d}")
+        for k in sorted(self.keywords):
+            lines.append(f"  - DOMAIN-KEYWORD,{k}")
+        if len(lines) == 1:
+            lines.append("  - DOMAIN,invalid.local")
         return lines
 
 
@@ -1074,6 +1088,7 @@ rules:
 
 def main() -> None:
     DIST_RULESET_DIR.mkdir(parents=True, exist_ok=True)
+    DIST_CLASH_DIR.mkdir(parents=True, exist_ok=True)
     mihomo_bin = shutil.which("mihomo")
 
     # 1. 并发拉取所有需要的上游 .list 源文件，大幅提速
@@ -1115,10 +1130,14 @@ def main() -> None:
         list_path = DIST_RULESET_DIR / f"{task.name}.list"
         yaml_path = DIST_RULESET_DIR / f"{task.name}.yaml"
         mrs_path = DIST_RULESET_DIR / f"{task.name}.mrs"
+        classical_yaml_path = DIST_CLASH_DIR / f"{task.name}.yaml"
 
         list_lines = dset.to_mihomo_text_lines() or ["invalid.local"]
         list_path.write_text("\n".join(list_lines) + "\n", encoding="utf-8")
         yaml_path.write_text("\n".join(dset.to_clash_domain_yaml_lines()) + "\n", encoding="utf-8")
+        # 对于不超过 5000 条的分流规则集同步输出 classical YAML (供 <<: *BehaviorYAML 直接引用)
+        if len(dset.suffixes) + len(dset.exact) + len(dset.keywords) <= 5000:
+            classical_yaml_path.write_text("\n".join(dset.to_clash_classical_yaml_lines()) + "\n", encoding="utf-8")
         maybe_compile_mrs(mihomo_bin, "domain", list_path, mrs_path)
 
     # 3. 执行 IPv4 / IPv6 CIDR 网段聚合与去重
