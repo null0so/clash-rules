@@ -57,8 +57,8 @@ function main(config) {
     { name: "🎯 全球直连", type: "select", proxies: ["DIRECT", "📦 大流量节点"] },
   ];
 
-  const dom = (n) => ({ type: "http", behavior: "domain", format: "yaml", url: `${BASE}/${n}.yaml`, path: `./ruleset/${n}.yaml`, interval: 86400 });
-  const ip = (n) => ({ type: "http", behavior: "ipcidr", format: "yaml", url: `${BASE}/${n}.yaml`, path: `./ruleset/${n}.yaml`, interval: 86400 });
+  const dom = (n) => ({ type: "http", behavior: "domain", format: "mrs", url: `${BASE}/${n}.mrs`, path: `./ruleset/${n}.mrs`, interval: 86400 });
+  const ip = (n) => ({ type: "http", behavior: "ipcidr", format: "mrs", url: `${BASE}/${n}.mrs`, path: `./ruleset/${n}.mrs`, interval: 86400 });
 
   config["rule-providers"] = {
     private_domain: dom("private_domain"),
