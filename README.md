@@ -27,18 +27,30 @@
 
 ---
 
-## 二、 两种使用方式（任选其一）
+## 二、 使用方式（支持 OpenWrt OpenClash 与桌面客户端）
 
-### 方式 A（最推荐）：Clash Verge Rev / Clash Party 一键覆写脚本
-无需改动你现有的机场订阅配置：
-1. 打开 **Clash Verge Rev**（或 Mihomo Party） -> 左侧 **订阅 (Profiles)**。
-2. 点击 **全局扩展脚本 (Script)**（或右键某个机场订阅 -> **编辑脚本**）。
-3. 将 [`override.js`](./override.js) 的内容完整复制粘贴进去，保存并启用即可（脚本完全自包含，无需拷贝本地文件夹）。
+### 路由器端（最推荐）：OpenWrt + OpenClash 部署指南
 
-### 方式 B：独立完整配置文件 (`config.yaml` + `rules/`)
-适合直接导入独立配置、OpenClash、ShellCrash 或路由器 Mihomo 核心：
-1. 打开 [`config.yaml`](./config.yaml)，找到 `proxy-providers -> MyAirport -> url`，替换为你的机场订阅地址。
-2. 保持 `config.yaml` 与同级 [`rules/`](./rules) 文件夹在同一目录下加载即可。
+针对 OpenWrt 上的 OpenClash，仓库每日自动生成了无 Emoji 乱码风险、兼容 `7874` Dnsmasq 端口与 Meta `.mrs` 二进制规则集的专用文件（任选以下一种接入方式）：
+
+#### 接入方式 1：OpenClash「开发者选项」一键覆写（推荐，直接接管你现有的机场订阅）
+如果你已经在 OpenClash 的「配置文件订阅」中添加了机场订阅，无需改动订阅：
+1. 确保内核为 Meta：**OpenClash -> 插件设置 -> 版本更新**，确认启用的是 **Meta 内核**。
+2. 检查防冲突开关：
+   - **插件设置 -> 模式设置**：推荐使用 **Fake-IP（增强）模式**。
+   - **插件设置 -> DNS 设置**：勾选 **禁用 Dnsmasq 缓存**；切勿在 `Fake-IP-Filter` 中填入 `google.com` 或 `googleapis.com`。
+   - **覆写设置 -> 规则设置**：**取消勾选**「第三方规则集」与「自定义规则」（交由我们的开发者脚本统一接管，避免规则顺序被打乱）。
+3. 粘贴覆写脚本：进入 **OpenClash -> 覆写设置 -> 开发者选项**（即编辑 `/etc/openclash/custom/openclash_custom_overwrite.sh`），将 [`dist/openclash_custom_overwrite.sh`](./dist/openclash_custom_overwrite.sh) 的全部内容替换进去，点击底部 **保存配置** -> **应用配置** 即可！
+
+#### 接入方式 2：OpenClash 独立完整配置文件（适合 `proxy-providers` 纯净管理）
+1. 下载 [`dist/openclash.yaml`](./dist/openclash.yaml)，将其中 `proxy-providers -> MyAirport -> url` 替换为你的机场 Clash 订阅链接。
+2. 上传至 **OpenClash -> 配置文件管理** 并启用即可（所有 22 个 `.mrs` 规则集均保存在 OpenClash 标准 `./rule_provider/` 目录，每 24 小时自动热更新）。
+
+---
+
+### 桌面端：Clash Verge Rev / Clash Party 一键覆写脚本
+1. 打开 **Clash Verge Rev**（或 Mihomo Party） -> 左侧 **订阅 (Profiles)** -> **全局扩展脚本 (Script)**。
+2. 将 [`dist/override-selfhosted.js`](./dist/override-selfhosted.js)（自托管 `.mrs` 版）或 [`override.js`](./override.js) 完整复制粘贴进去，保存并启用即可。
 
 ### 方式 C（进阶自动化）：推送到 GitHub Actions 每日自动去重 + 编译 `.mrs`
 本项目已内置零依赖去重编译器 [`scripts/build_rules.py`](./scripts/build_rules.py) 与工作流 [`.github/workflows/daily-build.yml`](./.github/workflows/daily-build.yml)：
